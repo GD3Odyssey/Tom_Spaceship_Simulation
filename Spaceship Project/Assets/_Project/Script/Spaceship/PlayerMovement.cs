@@ -37,7 +37,7 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    void MoveToDirection(Vector3 direction)
+    void MoveToDirection(Vector3 direction) 
     {
         this.transform.position += direction * Time.deltaTime * speed;
         FuelConsumption();
@@ -58,8 +58,16 @@ public class PlayerMovement : MonoBehaviour
     {
         if (other.CompareTag("Fuel"))
         {
-            GameManager.instance.GetFuel(100f);
-            Destroy(other.gameObject);
+            Debug.Log("Fuel Pickup Triggered");
+            FuelPickup pickup = other.GetComponent<FuelPickup>();
+
+            if (pickup != null)
+            {
+                pickup.Collect((float amount) =>
+                {
+                    GameManager.instance.GetFuel(amount);
+                });
+            }
         }
     }
 }
