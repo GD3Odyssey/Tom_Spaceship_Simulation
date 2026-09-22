@@ -1,4 +1,6 @@
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class UniqueIDGenerator : MonoBehaviour
 {
@@ -22,5 +24,26 @@ public class UniqueIDGenerator : MonoBehaviour
     {
         currentUniqueId++;
         return currentUniqueId;
+    }
+
+    public void IncreaseBy10()
+    {
+        currentUniqueId = +10;
+    }
+
+    [CustomEditor(typeof(UniqueIDGenerator))]
+    public class UniqueIDGeneratorEditor : Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            base.OnInspectorGUI();
+
+            UniqueIDGenerator generator = (UniqueIDGenerator)target;
+
+            if(GUILayout.Button("Increase By 10"))
+            {
+                generator.IncreaseBy10();
+            }
+        }
     }
 }

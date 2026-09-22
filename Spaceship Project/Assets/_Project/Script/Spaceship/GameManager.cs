@@ -45,6 +45,21 @@ public class GameManager : MonoBehaviour
 
     public void OnFuelUpdate(bool hasBeenFueled)
     {
-            Debug.Log("Fuel updated : " + hasBeenFueled);
+            Debug.Log("Fuel updated : " + hasBeenFueled);   
+    }
+
+    public void SpawnTourelle()
+    {
+
+    }
+
+    public void SpawnCar()
+    {
+
+    }
+
+    public void SpawnSpaceship()
+    {
+
     }
 }
