@@ -58,7 +58,6 @@ public class PlayerMovement : MonoBehaviour
     {
         if (other.CompareTag("Fuel"))
         {
-            Debug.Log("Fuel Pickup Triggered");
             FuelPickup pickup = other.GetComponent<FuelPickup>();
 
             if (pickup != null)
