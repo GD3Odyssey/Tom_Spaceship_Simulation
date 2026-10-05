@@ -2,56 +2,96 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float speed = 5f;
+    [Header("Movement")]
+    public float acceleration = 10f;
+    public float deceleration = 5f;
+    public float maxSpeed = 20f;
+    public float barrellRollSpeed = 80f;
+    private float currentSpeed;
 
-    void Start()
-    {
-        
-    }
+    [Header("Burst")]
+    public float burstMultiplier = 2f;
+    public float burstFuel = 0.1f;
+    public float fuelConsumption = 0.05f;
 
     private void Update()
     {
         UpdateInputs();
+        UpdateMovement();
     }
 
-    void UpdateInputs()
+    private void UpdateInputs()
     {
-        if(Input.GetKey(KeyCode.W))
-            MoveToDirection(Vector3.forward);
+        float forwardInput = 0f;
+
+        if (Input.GetKey(KeyCode.W))
+            forwardInput += 1f;
 
         if (Input.GetKey(KeyCode.S))
-            MoveToDirection(Vector3.back);
+            forwardInput -= 1f;
+
+        if (forwardInput != 0f)
+        {
+            // acceleration
+            currentSpeed += forwardInput * acceleration * Time.deltaTime;
+        }
+        else
+        {
+            // deceleration
+            currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, deceleration * Time.deltaTime);
+        }
+
+        currentSpeed = Mathf.Clamp(currentSpeed, -maxSpeed, maxSpeed);
+
+        float yawInput = 0f;
 
         if (Input.GetKey(KeyCode.A))
-            MoveToDirection(Vector3.left);
+            yawInput -= 1f;
 
         if (Input.GetKey(KeyCode.D))
-            MoveToDirection(Vector3.right);
+            yawInput += 1f;
+
+        float rollInput = 0f;
+
+        if (Input.GetKey(KeyCode.Q))
+            rollInput += 1f;
 
         if (Input.GetKey(KeyCode.E))
-            GameManager.instance.GetFuel(100f);
+            rollInput -= 1f;
 
-        if (Input.GetKey(KeyCode.Space))
+        RotateShip(yawInput, rollInput);
+
+        // burst
+        if (Input.GetKey(KeyCode.Space) && currentSpeed > 0f)
         {
-            Nitro(Vector3.forward);
+            currentSpeed = Mathf.Min(currentSpeed + acceleration * burstMultiplier * Time.deltaTime, maxSpeed * burstMultiplier);
+
+            GameManager.instance.GetFuel(-burstFuel * Time.deltaTime);
         }
     }
 
-    void MoveToDirection(Vector3 direction) 
+    private void RotateShip(float yawInput, float rollInput)
     {
-        this.transform.position += direction * Time.deltaTime * speed;
+        Vector3 rotation = new Vector3(0f, yawInput * barrellRollSpeed * Time.deltaTime, rollInput * barrellRollSpeed * Time.deltaTime);
+
+        transform.Rotate(rotation, Space.Self);
+    }
+
+    private void UpdateMovement()
+    {
+        if (Mathf.Approximately(currentSpeed, 0f))
+            return;
+
+        transform.position += transform.forward * currentSpeed * Time.deltaTime;
+
         FuelConsumption();
     }
 
-    void Nitro(Vector3 direction)
+    private void FuelConsumption()
     {
-        this.transform.position += direction * Time.deltaTime * speed * 2f;
-        FuelConsumption();
-    }
+        float consumption = fuelConsumption * Mathf.Abs(currentSpeed) * Time.deltaTime;
 
-    void FuelConsumption()
-    {
-        GameManager.instance.GetFuel(-0.05f);
+        GameManager.instance.GetFuel(-consumption);
     }
 
     private void OnTriggerEnter(Collider other)
