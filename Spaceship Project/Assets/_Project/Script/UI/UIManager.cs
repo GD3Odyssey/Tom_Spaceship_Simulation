@@ -17,6 +17,14 @@ public class UIManager : MonoBehaviour
     private Coroutine bumpRoutine;
     private Coroutine fuelRoutine;
 
+    [Header("Astéroïdes")]
+    public TextMeshProUGUI asteroidText;
+
+    [SerializeField] private float asteroidBumpScale = 1.2f;
+    [SerializeField] private float asteroidBumpDuration = 0.25f;
+
+    private Coroutine asteroidRoutine;
+
     void Awake()
     {
         if (instance == null)
@@ -34,6 +42,11 @@ public class UIManager : MonoBehaviour
     {
         fuelText.text = GameManager.instance.fuel.ToString("F0");
         fuelScrollbar.size = GameManager.instance.fuel / 1000f;
+
+        if (asteroidText != null && GameManager.instance != null)
+        {
+            asteroidText.text = GameManager.instance.destroyedAsteroids.ToString();
+        }
     }
 
     public void UpdateFuel(float fuel, System.Action<bool> callback)
@@ -119,5 +132,74 @@ public class UIManager : MonoBehaviour
         textRect.localScale = Vector3.one;
         barRect.localScale = Vector3.one;
         bumpRoutine = null;
+    }
+
+    public void UpdateAsteroids(int count, System.Action<bool> callback)
+    {
+        if (asteroidRoutine != null)
+            StopCoroutine(asteroidRoutine);
+
+        asteroidRoutine = StartCoroutine(UpdateAsteroidsCoroutine(count, callback));
+    }
+
+    private IEnumerator UpdateAsteroidsCoroutine(int targetCount, System.Action<bool> callback)
+    {
+        if (asteroidText == null)
+        {
+            asteroidRoutine = null;
+            callback?.Invoke(false);
+            yield break;
+        }
+
+        int startCount = 0;
+        int.TryParse(asteroidText.text, out startCount);
+
+        float t = 0f;
+        float duration = 0.2f;
+
+        RectTransform textRect = asteroidText.rectTransform;
+        Vector3 originalScale = Vector3.one;
+
+        while (t < 1f)
+        {
+            t += Time.deltaTime / duration;
+
+            int currentCount = Mathf.RoundToInt(Mathf.Lerp(startCount, targetCount, Mathf.Clamp01(t)));
+
+            asteroidText.text = currentCount.ToString();
+
+            yield return null;
+        }
+
+        asteroidText.text = targetCount.ToString();
+
+        t = 0f;
+
+        while (t < 1f)
+        {
+            t += Time.deltaTime / asteroidBumpDuration;
+
+            float scale = Mathf.Lerp(1f, asteroidBumpScale, Mathf.Clamp01(t));
+
+            textRect.localScale = originalScale * scale;
+            yield return null;
+        }
+
+        t = 0f;
+
+        while (t < 1f)
+        {
+            t += Time.deltaTime / asteroidBumpDuration;
+
+            float scale = Mathf.Lerp(asteroidBumpScale, 1f, Mathf.Clamp01(t));
+
+            textRect.localScale = originalScale * scale;
+            yield return null;
+        }
+
+        textRect.localScale = originalScale;
+        asteroidRoutine = null;
+
+        callback?.Invoke(true);
     }
 }

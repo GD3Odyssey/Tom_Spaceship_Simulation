@@ -14,6 +14,18 @@ public class PlayerMovement : MonoBehaviour
     public float burstFuel = 0.1f;
     public float fuelConsumption = 0.05f;
 
+    public bool IsBursting { get; private set; }
+
+    [SerializeField] private LayerMask obstacleMask = ~0;
+    [SerializeField] private float collisionSkin = 0.05f;
+
+    private Collider shipCollider;
+
+    private void Awake()
+    {
+        shipCollider = GetComponent<Collider>();
+    }
+
     private void Update()
     {
         UpdateInputs();
@@ -62,10 +74,11 @@ public class PlayerMovement : MonoBehaviour
         RotateShip(yawInput, rollInput);
 
         // burst
-        if (Input.GetKey(KeyCode.Space) && currentSpeed > 0f)
+        IsBursting = Input.GetKey(KeyCode.Space) && currentSpeed > 0f;
+
+        if (IsBursting)
         {
             currentSpeed = Mathf.Min(currentSpeed + acceleration * burstMultiplier * Time.deltaTime, maxSpeed * burstMultiplier);
-
             GameManager.instance.GetFuel(-burstFuel * Time.deltaTime);
         }
     }
@@ -82,7 +95,39 @@ public class PlayerMovement : MonoBehaviour
         if (Mathf.Approximately(currentSpeed, 0f))
             return;
 
-        transform.position += transform.forward * currentSpeed * Time.deltaTime;
+        Vector3 movement = transform.forward * currentSpeed * Time.deltaTime;
+
+        if (shipCollider != null && movement.sqrMagnitude > 0f)
+        {
+            RaycastHit[] hits = new RaycastHit[8];
+
+            int hitCount = shipCollider.Cast(movement.normalized, hits, movement.magnitude + collisionSkin, true);
+
+            float allowedDistance = movement.magnitude;
+
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hitCollider = hits[i].collider;
+
+                if (hitCollider == null || hitCollider.isTrigger)
+                    continue;
+
+                if (((1 << hitCollider.gameObject.layer) & obstacleMask.value) == 0)
+                    continue;
+
+                Asteroid asteroid = hitCollider.GetComponentInParent<Asteroid>();
+
+                if (asteroid != null && IsBursting)
+                {
+                    asteroid.DestroyAsteroid();
+                    continue;
+                }
+
+                allowedDistance = Mathf.Min(allowedDistance, Mathf.Max(0f, hits[i].distance - collisionSkin));
+            }
+
+            transform.position += movement.normalized * allowedDistance;
+        }
 
         FuelConsumption();
     }

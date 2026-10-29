@@ -5,12 +5,14 @@ public class GameManager : MonoBehaviour
     public static GameManager instance { get; private set; }
 
     public float fuel = 1000f;
+    public int destroyedAsteroids { get; private set; }
 
     private void Awake()
     {
         if(instance == null)
         {
             instance = this;
+            destroyedAsteroids = PlayerPrefs.GetInt("DestroyedAsteroids", 0);
             DontDestroyOnLoad(this.gameObject);
         }
         else
@@ -60,5 +62,28 @@ public class GameManager : MonoBehaviour
     public void SpawnSpaceship()
     {
 
+    }
+
+    public void AddDestroyedAsteroid()
+    {
+        destroyedAsteroids++;
+
+        PlayerPrefs.SetInt("DestroyedAsteroids", destroyedAsteroids);
+        PlayerPrefs.Save();
+
+        ShowDestroyedAsteroids();
+    }
+
+    private void ShowDestroyedAsteroids()
+    {
+        if (UIManager.instance == null)
+            return;
+
+        UIManager.instance.UpdateAsteroids(destroyedAsteroids, OnAsteroidsUpdated);
+    }
+
+    public void OnAsteroidsUpdated(bool updated)
+    {
+        Debug.Log("Asteroid counter updated : " + updated);
     }
 }
