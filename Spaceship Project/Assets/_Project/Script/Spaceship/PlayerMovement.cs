@@ -1,30 +1,55 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Rigidbody))]
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    public float acceleration = 10f;
-    public float deceleration = 5f;
-    public float maxSpeed = 20f;
+    public float acceleration = 2f;
+    public float deceleration = 1f;
+    public float maxSpeed = 7f;
+
+    [Header("Rotation")]
     public float barrellRollSpeed = 80f;
-    private float currentSpeed;
+    public float pitchSpeed = 80f;
 
     [Header("Burst")]
     public float burstMultiplier = 2f;
-    public float burstFuel = 0.1f;
-    public float fuelConsumption = 0.05f;
+    public float burstFuel = 5f;
+    public float fuelConsumption = 5f;
 
     public bool IsBursting { get; private set; }
+
+    private Rigidbody rb;
+
+    private float currentSpeed;
+
+    private float forwardInput;
+    private float yawInput;
+    private float rollInput;
+    private float pitchInput;
+
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+
+        rb.useGravity = false;
+        rb.isKinematic = false;
+    }
 
     private void Update()
     {
         UpdateInputs();
+    }
+
+    private void FixedUpdate()
+    {
         UpdateMovement();
+        RotateShip();
     }
 
     private void UpdateInputs()
     {
-        float forwardInput = 0f;
+        forwardInput = 0f;
 
         if (Input.GetKey(KeyCode.W))
             forwardInput += 1f;
@@ -32,20 +57,7 @@ public class PlayerMovement : MonoBehaviour
         if (Input.GetKey(KeyCode.S))
             forwardInput -= 1f;
 
-        if (forwardInput != 0f)
-        {
-            // acceleration
-            currentSpeed += forwardInput * acceleration * Time.deltaTime;
-        }
-        else
-        {
-            // deceleration
-            currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, deceleration * Time.deltaTime);
-        }
-
-        currentSpeed = Mathf.Clamp(currentSpeed, -maxSpeed, maxSpeed);
-
-        float yawInput = 0f;
+        yawInput = 0f;
 
         if (Input.GetKey(KeyCode.A))
             yawInput -= 1f;
@@ -53,7 +65,7 @@ public class PlayerMovement : MonoBehaviour
         if (Input.GetKey(KeyCode.D))
             yawInput += 1f;
 
-        float rollInput = 0f;
+        rollInput = 0f;
 
         if (Input.GetKey(KeyCode.Q))
             rollInput += 1f;
@@ -61,38 +73,64 @@ public class PlayerMovement : MonoBehaviour
         if (Input.GetKey(KeyCode.E))
             rollInput -= 1f;
 
-        RotateShip(yawInput, rollInput);
+        pitchInput = 0f;
 
-        // burst
+        if (Input.GetKey(KeyCode.UpArrow))
+            pitchInput -= 1f;
+
+        if (Input.GetKey(KeyCode.DownArrow))
+            pitchInput += 1f;
+
         IsBursting = Input.GetKey(KeyCode.Space) && currentSpeed > 0f;
 
         if (IsBursting)
         {
-            currentSpeed = Mathf.Min(currentSpeed + acceleration * burstMultiplier * Time.deltaTime, maxSpeed * burstMultiplier);
             GameManager.instance.GetFuel(-burstFuel * Time.deltaTime);
         }
     }
 
-    private void RotateShip(float yawInput, float rollInput)
-    {
-        Vector3 rotation = new Vector3(0f, yawInput * barrellRollSpeed * Time.deltaTime, rollInput * barrellRollSpeed * Time.deltaTime);
-
-        transform.Rotate(rotation, Space.Self);
-    }
-
     private void UpdateMovement()
     {
-        if (Mathf.Approximately(currentSpeed, 0f))
-            return;
+        if (forwardInput != 0f)
+        {
+            currentSpeed += forwardInput * acceleration * Time.fixedDeltaTime;
+        }
+        else
+        {
+            currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, deceleration * Time.fixedDeltaTime);
+        }
 
-        transform.position += transform.forward * currentSpeed * Time.deltaTime;
+        float effectiveMaxSpeed = IsBursting ? maxSpeed * burstMultiplier : maxSpeed;
 
-        FuelConsumption();
+        currentSpeed = Mathf.Clamp(currentSpeed, -effectiveMaxSpeed, effectiveMaxSpeed);
+
+        if (IsBursting && currentSpeed > 0f)
+        {
+            currentSpeed = Mathf.Min(currentSpeed + acceleration * burstMultiplier * Time.fixedDeltaTime, effectiveMaxSpeed);
+        }
+
+        Vector3 movement = transform.forward * currentSpeed;
+
+        rb.linearVelocity = movement;
+
+        if (!Mathf.Approximately(currentSpeed, 0f))
+        {
+            FuelConsumption();
+        }
+    }
+
+    private void RotateShip()
+    {
+        Vector3 rotation = new Vector3(pitchInput * pitchSpeed, yawInput * barrellRollSpeed, rollInput * barrellRollSpeed);
+
+        Quaternion deltaRotation = Quaternion.Euler(rotation * Time.fixedDeltaTime);
+
+        rb.MoveRotation(rb.rotation * deltaRotation);
     }
 
     private void FuelConsumption()
     {
-        float consumption = fuelConsumption * Mathf.Abs(currentSpeed) * Time.deltaTime;
+        float consumption = fuelConsumption * Mathf.Abs(currentSpeed) * Time.fixedDeltaTime;
 
         GameManager.instance.GetFuel(-consumption);
     }
@@ -121,8 +159,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        Asteroid asteroid =
-            collision.gameObject.GetComponentInParent<Asteroid>();
+        Asteroid asteroid = collision.gameObject.GetComponentInParent<Asteroid>();
 
         if (asteroid == null)
             return;
