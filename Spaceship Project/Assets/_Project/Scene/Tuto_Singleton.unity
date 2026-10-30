@@ -356,6 +356,7 @@ MonoBehaviour:
   deceleration: 1
   maxSpeed: 7
   barrellRollSpeed: 10
+  pitchSpeed: 80
   burstMultiplier: 2
   burstFuel: 5
   fuelConsumption: 0.1
@@ -404,9 +405,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 0
-  m_CollisionDetection: 0
+  m_CollisionDetection: 2
 --- !u!1 &783301434
 GameObject:
   m_ObjectHideFlags: 0
