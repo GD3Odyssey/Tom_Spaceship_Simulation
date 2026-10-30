@@ -7,7 +7,7 @@ public class UniqueIDGenerator : MonoBehaviour
     private static UniqueIDGenerator instance;
     public static UniqueIDGenerator Instance => instance;
 
-    int currentUniqueId = 0;
+    [SerializeField] private int currentUniqueId = 0;
 
     private void Awake()
     {
@@ -28,7 +28,7 @@ public class UniqueIDGenerator : MonoBehaviour
 
     public void IncreaseBy10()
     {
-        currentUniqueId = +10;
+        currentUniqueId += 10;
     }
 
     [CustomEditor(typeof(UniqueIDGenerator))]

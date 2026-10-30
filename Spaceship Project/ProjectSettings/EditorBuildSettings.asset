@@ -9,5 +9,6 @@ EditorBuildSettings:
     path: Assets/_Project/Scene/Tuto_Singleton.unity
     guid: 720a33c852f6d7c45b681ee683d0278f
   m_configObjects:
+    com.unity.addressableassets: {fileID: 11400000, guid: 59577656c17048a4cacac930cf0f6574, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0

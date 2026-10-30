@@ -16,16 +16,6 @@ public class PlayerMovement : MonoBehaviour
 
     public bool IsBursting { get; private set; }
 
-    [SerializeField] private LayerMask obstacleMask = ~0;
-    [SerializeField] private float collisionSkin = 0.05f;
-
-    private Collider shipCollider;
-
-    private void Awake()
-    {
-        shipCollider = GetComponent<Collider>();
-    }
-
     private void Update()
     {
         UpdateInputs();
@@ -95,39 +85,7 @@ public class PlayerMovement : MonoBehaviour
         if (Mathf.Approximately(currentSpeed, 0f))
             return;
 
-        Vector3 movement = transform.forward * currentSpeed * Time.deltaTime;
-
-        if (shipCollider != null && movement.sqrMagnitude > 0f)
-        {
-            RaycastHit[] hits = new RaycastHit[8];
-
-            int hitCount = shipCollider.Cast(movement.normalized, hits, movement.magnitude + collisionSkin, true);
-
-            float allowedDistance = movement.magnitude;
-
-            for (int i = 0; i < hitCount; i++)
-            {
-                Collider hitCollider = hits[i].collider;
-
-                if (hitCollider == null || hitCollider.isTrigger)
-                    continue;
-
-                if (((1 << hitCollider.gameObject.layer) & obstacleMask.value) == 0)
-                    continue;
-
-                Asteroid asteroid = hitCollider.GetComponentInParent<Asteroid>();
-
-                if (asteroid != null && IsBursting)
-                {
-                    asteroid.DestroyAsteroid();
-                    continue;
-                }
-
-                allowedDistance = Mathf.Min(allowedDistance, Mathf.Max(0f, hits[i].distance - collisionSkin));
-            }
-
-            transform.position += movement.normalized * allowedDistance;
-        }
+        transform.position += transform.forward * currentSpeed * Time.deltaTime;
 
         FuelConsumption();
     }
@@ -141,17 +99,37 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Fuel"))
-        {
-            FuelPickup pickup = other.GetComponent<FuelPickup>();
+        if (!other.CompareTag("Fuel"))
+            return;
 
-            if (pickup != null)
-            {
-                pickup.Collect((float amount) =>
-                {
-                    GameManager.instance.GetFuel(amount);
-                });
-            }
-        }
+        FuelPickup pickup = other.GetComponent<FuelPickup>();
+
+        if (pickup == null)
+            pickup = other.GetComponentInParent<FuelPickup>();
+
+        if (pickup == null)
+            pickup = other.GetComponentInChildren<FuelPickup>();
+
+        if (pickup == null)
+            return;
+
+        pickup.Collect((float amount) =>
+        {
+            GameManager.instance.GetFuel(amount);
+        });
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        Asteroid asteroid =
+            collision.gameObject.GetComponentInParent<Asteroid>();
+
+        if (asteroid == null)
+            return;
+
+        if (!IsBursting)
+            return;
+
+        asteroid.DestroyAsteroid();
     }
 }

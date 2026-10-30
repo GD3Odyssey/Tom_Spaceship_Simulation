@@ -7,6 +7,14 @@ public class GameManager : MonoBehaviour
     public float fuel = 1000f;
     public int destroyedAsteroids { get; private set; }
 
+    [Header("Prefabs de placement")]
+    public GameObject fuelPrefab;
+    public GameObject asteroidPrefab;
+
+    [Header("Placement")]
+    [Min(0f)]
+    public float minimumItemSpacing = 2f;
+
     private void Awake()
     {
         if(instance == null)

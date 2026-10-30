@@ -9,7 +9,9 @@ public class FuelPickup : MonoBehaviour
     public float bigScaleMultiplier = 1.5f;
     public float lastScaleMultiplier = 4f;
 
-    private bool isCollected = false;
+    [SerializeField] private int uniqueID = -1;
+
+    private bool isCollected = false;  
 
     public void Collect(Action<float> callback)
     {
@@ -17,6 +19,13 @@ public class FuelPickup : MonoBehaviour
         isCollected = true;
 
         StartCoroutine(CollectRoutine(callback));
+    }
+
+    public int UniqueID => uniqueID;
+
+    public void SetUniqueID(int id)
+    {
+        uniqueID = id;
     }
 
     IEnumerator CollectRoutine(Action<float> callback)
