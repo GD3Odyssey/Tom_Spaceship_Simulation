@@ -6,9 +6,29 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
-[Overlay(typeof(SceneView), "Spaceship Item Spawner")]
 public class MyCustomTool : Overlay
 {
+    private static MyCustomTool activeOverlay;
+
+    [MenuItem("Tools/Spaceship Item Spawner/Afficher")]
+    private static void ShowOverlay()
+    {
+        SceneView sceneView = SceneView.lastActiveSceneView;
+
+        if (sceneView == null)
+            sceneView = EditorWindow.GetWindow<SceneView>();
+
+        if (activeOverlay != null)
+            SceneView.RemoveOverlayFromActiveView(activeOverlay);
+
+        activeOverlay = new MyCustomTool();
+
+        activeOverlay.displayName = "Spaceship Item Spawner";
+        activeOverlay.displayed = true;
+
+        SceneView.AddOverlayToActiveView(activeOverlay);
+    }
+
     private enum PlacementMode
     {
         None,
@@ -21,6 +41,9 @@ public class MyCustomTool : Overlay
     public override VisualElement CreatePanelContent()
     {
         VisualElement root = new VisualElement();
+
+        root.style.minWidth = 220;
+        root.style.minHeight = 120;
 
         Button fuelButton = new Button(() => SetMode(PlacementMode.Fuel));
         fuelButton.text = "Placer Fuel";
